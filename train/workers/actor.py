@@ -22,6 +22,7 @@ from train.utils.logging import (
     gather_and_reduce,
     rank0_log
 )
+from transformers.utils import is_flash_attn_2_available 
 
 
 class Actor(Worker):
@@ -41,7 +42,7 @@ class Actor(Worker):
             model_cls.from_pretrained,
             config.model_name,
             trust_remote_code=True,
-            attn_implementation="flash_attention_2"
+            attn_implementation="flash_attention_2" if is_flash_attn_2_available() else "sdpa"
         )
 
         self.prepare_model_optimizer()
