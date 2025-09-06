@@ -1,0 +1,34 @@
+# Hydra configuration for a minimal test run on a single L4 GPU.
+# Inherits from the main grpo config and overrides key parameters.
+
+defaults:
+  - grpo
+  - _self_
+
+# 1. Use a much smaller model to fit in 24GB VRAM
+actor:
+  model_name: TinyLlama/TinyLlama-1.1B-Chat-v1.0
+  max_length_per_device: 1024 # Reduce context length to save memory
+
+# 2. Drastically reduce batch sizes
+data:
+  prompts_per_rollout: 4   # Batch size for generating rollouts
+  responses_per_prompt: 4  # Group size for GRPO
+
+# 3. Use tiny datasets for a quick run
+rollout:
+  gpu_memory_utilization: 0.7 # sglang memory fraction, can be higher on single GPU
+  verifiers_envs:
+    - id: "math-python"
+      kwargs: { split: "train[:64]" } # Use only 64 examples
+    - id: "wordle"
+      kwargs: { split: "train[:64]" } # Use only 64 examples
+  train_sampling_params:
+    max_new_tokens: 512 # Reduce max generation length
+
+# 4. Configure trainer for a short test run
+trainer:
+  project: Infinite-L4-Test
+  experiment_name: tinyllama-verifiers-test
+  test_freq: 4  # Evaluate every 4 steps
+  save_freq: 8  # Save a checkpoint every 8 steps
