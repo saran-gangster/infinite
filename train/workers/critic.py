@@ -9,6 +9,7 @@ from train.utils.sequences import data_manager, count_total
 from train.utils.ring_attn import ring_attn_manager
 from train.utils.functions import aggregate_values
 from train.utils.offloading import model_offloading_manager
+from transformers.utils import is_flash_attn_2_available
 from train.utils.logging import (
     progress_bar,
     time_logger,
@@ -27,7 +28,7 @@ class Critic(Worker):
             config.model_name,
             num_labels=1,
             trust_remote_code=True,
-            attn_implementation="flash_attention_2"
+            attn_implementation="flash_attention_2" if is_flash_attn_2_available() else "sdpa"
         )
 
         self.prepare_model_optimizer()
