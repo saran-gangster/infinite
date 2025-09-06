@@ -22,10 +22,7 @@ this project implements a novel reinforcement learning approach that leverages p
 - **worker architecture**: modular design with separate actor, critic, and rollout workers
 - **multi-turn dataset handling for RL rollouts**
 - **checkpointing**
-- **environment rewards**: currently added few basic custom reward functions for various rl tasks:
-  - local search optimization
-  - orz problem solving
-  - searchr1 retrieval tasks
+- **environments**: Integrates with the [verifiers](https://github.com/willccbb/verifiers) library for standardized, reusable RL environments.
 - **hydra configuration**: yaml-based configuration management for hyperparameters
 
 ## installation
@@ -63,15 +60,15 @@ edit `config/grpo.yaml` to customize training parameters:
 - model architecture settings
 - parallelism configurations (ddp, tp, sp sizes)
 - learning rate and optimizer settings
-- dataset paths and batch sizes
-- reward function specifications
+- verifiers environment configurations
+- batch sizes
 
 ## project structure
 
 ```
 infinite/
 ├── config/          # hydra configuration files
-├── env/            # custom reward functions
+├── env/            # environment wrapper for verifiers
 ├── train/          # training implementation
 │   ├── datasets/   # dataset handlers
 │   ├── trainer/    # training algorithms
@@ -96,11 +93,11 @@ the grpo trainer uses reinforcement learning with group-based policy optimizatio
 - **zigzag ring attention**: efficient attention for long sequences
 
 ### data format
-training data should be in json format:
+training data is now sourced directly from `verifiers` environments. the expected format for prompts is a list of chat messages:
 ```json
 [
     {
-        "messages": [
+        "prompt": [
             {"role": "system", "content": "system prompt"},
             {"role": "user", "content": "user query"}
         ],

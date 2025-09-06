@@ -1,0 +1,95 @@
+# GRPO Configuration for the verifiers-integrated trainer.
+
+defaults:
+  - _self_
+  - override hydra/launcher: submitit_local
+
+# Data configuration now only specifies batching parameters.
+data:
+  prompts_per_rollout: 128
+  responses_per_prompt: 16
+  
+actor:
+  model_name: Qwen/Qwen2.5-7B-Instruct
+  tokenizer_name: ${actor.model_name}
+  use_liger_kernel: false
+  gradient_checkpointing: true
+  ddp_size: 1
+  tp_size: 1
+  sp_size: 1
+  max_length_per_device: 4096
+  max_inference_length_per_device: ${actor.max_length_per_device}
+  temperature: ${rollout.train_sampling_params.temperature}
+  update_per_rollout: 1
+  clip: 0.2
+  agg_mode: all_token_mean
+  lr: 1e-6
+  weight_decay: 1e-2
+  max_grad_norm: 1.0
+  scheduler: constant
+  warmup_ratio: 0.1
+  freeze_steps: 0
+  offload_model: true
+  offload_optimizer: true
+
+  kl:
+    coef: 0.0
+    type: null # `reward` or `loss`
+    reward_estimator: k3
+    loss_estimator: k2
+
+  entropy:
+    coef: 0.0
+
+rollout:
+  model_name: ${actor.model_name}
+  tokenizer_name: ${actor.model_name}
+  tp_size: 1
+  gpu_memory_utilization: 0.5
+  verifiers_envs:
+    - id: "math-python"
+      kwargs: { split: "train[:10%]" } 
+    - id: "wordle"
+      kwargs: { split: "train[:10%]" }
+  apply_chat_template: true
+  train_sampling_params:
+    temperature: 1.0
+    max_new_tokens: 1024
+  test_sampling_params:
+    temperature: 0.0
+    max_new_tokens: 1024
+  dynamic_filtering: true
+
+ref_actor:
+  model_name: ${actor.model_name}
+  tokenizer_name: ${ref_actor.model_name}
+  use_liger_kernel: ${actor.use_liger_kernel}
+  ddp_size: ${actor.ddp_size}
+  tp_size: ${actor.tp_size}
+  sp_size: ${actor.sp_size}
+  max_inference_length_per_device: ${actor.max_length_per_device}
+  temperature: ${rollout.train_sampling_params.temperature}
+  offload_model: ${actor.offload_model}
+
+# NOTE: The critic block is not needed when adv.estimator=reinforce.
+# It is kept here commented out for easy switching to GAE if needed.
+# critic:
+#   model_name: ${actor.model_name}
+#   ...
+
+adv:
+  estimator: reinforce
+  gamma: 1.0
+  lamda: 1.0
+  global_norm: false
+  norm_var: true
+  
+trainer:
+  project: Infinite-Verifiers
+  experiment_name: default-run
+  load_ckpt_from: null
+  n_epochs: 1
+  test_freq: 32  # Set a reasonable default
+  save_dir: ckpts/${trainer.experiment_name}
+  save_freq: 32 # Set a reasonable default
+  use_wandb: true

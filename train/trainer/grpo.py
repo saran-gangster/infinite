@@ -33,9 +33,10 @@ class GRPOTrainer(Trainer):
 
     def __init__(self, config):
         super().__init__(config)
-
-        self.train_dataloader = self.get_dataloader(True)
-        self.test_dataloader = self.get_dataloader(False)
+        self.rollout = Rollout(config.rollout)
+        env_dataset = self.rollout.env_wrapper.env.dataset
+        self.train_dataloader = self.get_dataloader(env_dataset, train=True)
+        self.test_dataloader = self.get_dataloader(env_dataset, train=False)
 
         self.actor = Actor(config.actor, True)
         self.actor.scheduler = self.prepare_scheduler(self.actor)
@@ -44,24 +45,17 @@ class GRPOTrainer(Trainer):
         if config.adv.estimator == "gae":
             self.critic = Critic(config.critic)
             self.critic.scheduler = self.prepare_scheduler(self.critic)
-        self.rollout = Rollout(config.rollout)
 
-    def get_dataloader(self, train: bool):
-        """
-        Reference: RL2/trainer/ppo.py lines 35-48
-        """
-        dataset = RLDataset(
-            self.config.data.train_data_path
-            if train else self.config.data.test_data_path,
-            self.config.data.responses_per_prompt
-            if train else 1
-        )
-
-        return get_dataloader(
+    def get_dataloader(self, dataset, train: bool):
+        rl_dataset = RLDataset(
             dataset,
-            self.config.data.prompts_per_rollout
-            if train else len(dataset)
+            self.config.data.responses_per_prompt if train else 1
         )
+        return get_dataloader(
+            rl_dataset,
+            self.config.data.prompts_per_rollout if train else len(rl_dataset)
+        )
+
     
     @time_logger("compute_approx_kl")
     def compute_approx_kl(self, tensor_dicts, step):

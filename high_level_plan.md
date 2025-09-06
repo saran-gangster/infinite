@@ -4,14 +4,13 @@ Goal: Maximize continual learning via a minimal replay mechanism driven by per�
 
 ### Issue Tasklist
 - [ ] #2 Models, domains, datasets, evals for first iteration (P0)
-- [ ] #5 Domain registry + multi-domain dataset/env routing
+- [x] #5 Domain registry + multi-domain dataset/env routing
 - [ ] #8 Stubs and randomized rewards to unblock E2E runs
 - [ ] #6 Single-signal prioritized replay scheduler (acc_ema)
 - [ ] #7 Contamination detector (train/eval overlap audit)
 
 ### P0 — Prerequisites ([#2](https://github.com/tokenbender/infinite/issues/2))
 - [ ] Define domains and coverage: math, code, tools, language, knowledge
-- [ ] Create dataset layout per domain under `data/<domain>/{train,test}.jsonl`
 - [ ] Add eval adapters under `evals/<domain>/` (stubs allowed):
   - [ ] math500
   - [ ] aiderbench
@@ -20,15 +19,17 @@ Goal: Maximize continual learning via a minimal replay mechanism driven by per�
   - [ ] vrcli
   - [ ] eq bench
   - [ ] simpleqa
-- [ ] Ensure env/verifiers exist or stubbed in `env/` (use `env/orz.py`, `env/searchr1.py`, extend as needed)
+- [ ] Ensure `verifiers` environments exist for each domain, or create them.
 - [ ] Implement contamination gate CLI and config (Issue #7)
 - [ ] Choose baseline model (qwen3‑4b or gemma3‑270m) and run baseline eval sweep (optional seeding for `init_acc_ema`)
 
 ### P0 — Domain Registry & Routing ([#5](https://github.com/tokenbender/infinite/issues/5))
-- [ ] Add config `data.domains: [{id, train_path, test_path, env_path, rubric?}]`
-- [ ] Implement `MultiDomainRLDataset` yielding `{domain_id, messages, answer}` with per‑domain iterators
-- [ ] Add env registry in rollout; select env by `domain_id`
-- [ ] W&B: log `domain_id` distribution
+- [x] Integrate with `verifiers` library to handle environments.
+- [x] Use `verifiers.EnvGroup` to combine multiple environments (domains).
+- [x] Configure the list of environments in `config/grpo.yaml` under `rollout.verifiers_envs`.
+- [x] The `VerifiersEnvWrapper` now provides a combined dataset and routes rollouts.
+- [x] The `domain_id` is automatically populated from the environment's `task` name, ready for the scheduler.
+- [ ] W&B: log `domain_id` distribution.
 
 ### P0 — Stubs & Randomized Rewards ([#8](https://github.com/tokenbender/infinite/issues/8))
 - [ ] Add `rollout.mode: real|stub`; bypass LLM in stub mode with placeholder responses
@@ -63,7 +64,7 @@ Goal: Maximize continual learning via a minimal replay mechanism driven by per�
 
 ### Unblocking Order & Ownership
 - [ ] #2 — P0: models + domains/datasets/evals selection — Assignee: @me — https://github.com/tokenbender/infinite/issues/2
-- [ ] #5 — P0 (Blocks #6): domain registry + routing — Assignee: @me — https://github.com/tokenbender/infinite/issues/5
+- [x] #5 — P0 (Blocks #6): domain registry + routing — Assignee: @me — https://github.com/tokenbender/infinite/issues/5
 - [ ] #8 — P0 (optional dep on #5): stubs + randomized rewards — Assignee: @me — https://github.com/tokenbender/infinite/issues/8
 - [ ] #6 — P1 (Blocked by #5): scheduler + `acc_ema` persistence — https://github.com/tokenbender/infinite/issues/6
 - [ ] #7 — P0 (Independent): contamination detector gate — https://github.com/tokenbender/infinite/issues/7
